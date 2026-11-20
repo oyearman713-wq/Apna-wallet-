@@ -1,0 +1,11 @@
+{
+  "name": "SmartPay Wallet",
+  "description": "Production-ready Indian digital wallet and UPI payment platform with PSP sandbox integration, real QR scanner, WebAuthn biometrics, and Gemini Live API visual studio.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

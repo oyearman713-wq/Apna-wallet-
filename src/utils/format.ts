@@ -1,0 +1,129 @@
+import type { ParsedUpiQr, TransactionRecord, UserProfile } from "../types";
+
+export function formatINR(paise: number): string {
+  const rupees = paise / 100;
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(rupees);
+}
+
+export function formatIST(isoString: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      timeZone: "Asia/Kolkata",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(new Date(isoString));
+  } catch {
+    return isoString;
+  }
+}
+
+export function parseUpiUri(rawText: string): ParsedUpiQr | null {
+  const trimmed = rawText.trim();
+  if (!trimmed.toLowerCase().startsWith("upi://pay")) {
+    return null;
+  }
+  try {
+    const queryIndex = trimmed.indexOf("?");
+    if (queryIndex === -1) return null;
+    const params = new URLSearchParams(trimmed.slice(queryIndex + 1));
+    const pa = (params.get("pa") || "").trim();
+    if (!/^[a-zA-Z0-9._-]{2,64}@[a-zA-Z0-9]{2,32}$/.test(pa)) {
+      return null;
+    }
+    const pn = (params.get("pn") || pa.split("@")[0]).trim();
+    const am = (params.get("am") || "").trim();
+    const parsedAmt = Number(am);
+    const hasValidAm = Boolean(am && Number.isFinite(parsedAmt) && parsedAmt >= 1);
+
+    return {
+      vpa: pa,
+      payeeName: pn,
+      amountRupees: hasValidAm ? parsedAmt.toFixed(2) : "",
+      amountLocked: hasValidAm,
+      note: (params.get("tn") || "").trim(),
+      merchantCode: (params.get("mc") || "").trim(),
+      currency: (params.get("cu") || "INR").toUpperCase(),
+      rawUri: trimmed,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+export function downloadTransactionReceipt(tx: TransactionRecord, user: UserProfile): void {
+  const envBadge = tx.environment === "live" ? "LIVE UPI NETWORK" : "SANDBOX TEST RECEIPT";
+  const html = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>SmartPay Receipt ${escapeHtml(tx.id)}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f4f7fb; color: #0a162e; margin: 0; padding: 32px; }
+    .card { max-width: 540px; margin: 0 auto; background: #ffffff; border: 1px solid #dbe2ef; border-radius: 12px; padding: 28px; }
+    .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; }
+    .brand { font-size: 20px; font-weight: 700; color: #081124; }
+    .env { font-size: 11px; font-weight: 600; color: #475569; letter-spacing: 0.04em; }
+    .amount { font-size: 32px; font-weight: 700; margin: 8px 0; font-variant-numeric: tabular-nums; }
+    .status { font-size: 13px; font-weight: 600; margin-bottom: 20px; }
+    .row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+    .label { color: #64748b; }
+    .val { font-weight: 600; text-align: right; font-family: ui-monospace, monospace; }
+    .footer { margin-top: 20px; font-size: 11px; color: #64748b; line-height: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="brand">SmartPay Wallet</div>
+      <div class="env">${escapeHtml(envBadge)}</div>
+    </div>
+    <div class="amount">${escapeHtml(formatINR(tx.amount_paise))}</div>
+    <div class="status">Status: ${escapeHtml(tx.status)} (${escapeHtml(tx.direction)})</div>
+    <div class="row"><span class="label">Transaction ID</span><span class="val">${escapeHtml(tx.id)}</span></div>
+    <div class="row"><span class="label">Date & Time (IST)</span><span class="val">${escapeHtml(formatIST(tx.created_at))}</span></div>
+    <div class="row"><span class="label">Counterparty</span><span class="val">${escapeHtml(tx.counterparty_name)}</span></div>
+    <div class="row"><span class="label">UPI VPA</span><span class="val">${escapeHtml(tx.counterparty_vpa)}</span></div>
+    <div class="row"><span class="label">Account Holder</span><span class="val">${escapeHtml(user.fullName)} (${escapeHtml(user.vpa)})</span></div>
+    <div class="row"><span class="label">NPCI UTR / RRN</span><span class="val">${escapeHtml(tx.utr_rrn || "Pending")}</span></div>
+    <div class="row"><span class="label">PSP Reference</span><span class="val">${escapeHtml(tx.psp_order_id || "—")}</span></div>
+    <div class="row"><span class="label">Note</span><span class="val">${escapeHtml(tx.note || "—")}</span></div>
+    <div class="row"><span class="label">Receipt Integrity Hash</span><span class="val">${escapeHtml(tx.receipt_hash)}</span></div>
+    <div class="footer">
+      Generated by SmartPay Wallet India. ${
+        tx.environment === "sandbox"
+          ? "This receipt reflects an official PSP sandbox test transaction and does not represent real INR settlement."
+          : "Authorized UPI payment receipt."
+      }
+    </div>
+  </div>
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `SmartPay-Receipt-${tx.id}.html`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(url);
+}
