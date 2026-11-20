@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { CheckCircle2, Fingerprint, Landmark, ShieldCheck, AlertTriangle } from "lucide-react";
+import { CheckCircle2, Fingerprint, Landmark, ShieldCheck, Smartphone, AlertTriangle } from "lucide-react";
+import { usePWAInstall } from "../hooks/usePWAInstall";
 import type { AuditLogRecord, BankAccount, ComplianceStatus, UserProfile } from "../types";
 import { formatIST } from "../utils/format";
 import { enrollDeviceBiometric, isWebAuthnSupported } from "../utils/webauthn";
+import { PWAInstallButton } from "./PWAInstallButton";
 
 interface AccountSettingsViewProps {
   user: UserProfile;
@@ -26,6 +28,7 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
+  const { isInstalled } = usePWAInstall();
 
   useEffect(() => {
     const fetchLogs = async () => {
@@ -263,6 +266,28 @@ export const AccountSettingsView: React.FC<AccountSettingsViewProps> = ({
               >
                 {user.biometricEnabled ? "Disable Biometrics" : "Enroll Device"}
               </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-display text-base font-bold text-[#081124]">
+                  Install SmartPay Mobile App (PWA)
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Home-screen standalone launch with offline app shell caching
+                </p>
+              </div>
+              <Smartphone className="w-5 h-5 text-[#1D4ED8]" />
+            </div>
+            <div className="flex items-center justify-between gap-4 pt-1">
+              <span className="text-xs text-slate-600">
+                {isInstalled
+                  ? "Running in standalone installed app mode"
+                  : "Ready to install on Android, iOS Safari, and Desktop"}
+              </span>
+              <PWAInstallButton variant="card" />
             </div>
           </div>
 

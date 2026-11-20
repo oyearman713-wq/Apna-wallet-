@@ -12,9 +12,11 @@ import {
 import { AccountSettingsView } from "./components/AccountSettingsView";
 import { AuthScreen } from "./components/AuthScreen";
 import { HistoryView } from "./components/HistoryView";
+import { OfflineIndicator } from "./components/OfflineIndicator";
 import { PaymentModal, type PaymentIntent } from "./components/PaymentModal";
 import { PayView } from "./components/PayView";
 import { PointEditStudio } from "./components/PointEditStudio";
+import { PWAInstallButton } from "./components/PWAInstallButton";
 import { QrPaymentView } from "./components/QrPaymentView";
 import { ReceiptModal } from "./components/ReceiptModal";
 import { WalletOverview } from "./components/WalletOverview";
@@ -129,15 +131,18 @@ export default function App() {
 
   if (!token || !user) {
     return (
-      <AuthScreen
-        compliance={compliance}
-        onAuthenticated={(payload) => {
-          setToken(payload.token);
-          setUser(payload.user);
-          setBankAccounts(payload.bankAccounts);
-          setCompliance(payload.compliance);
-        }}
-      />
+      <>
+        <AuthScreen
+          compliance={compliance}
+          onAuthenticated={(payload) => {
+            setToken(payload.token);
+            setUser(payload.user);
+            setBankAccounts(payload.bankAccounts);
+            setCompliance(payload.compliance);
+          }}
+        />
+        <OfflineIndicator />
+      </>
     );
   }
 
@@ -239,6 +244,7 @@ export default function App() {
               </div>
             </div>
           </div>
+          <PWAInstallButton variant="sidebar" />
           <button
             type="button"
             onClick={handleLogout}
@@ -272,6 +278,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
+            <PWAInstallButton variant="header" />
             <button
               type="button"
               onClick={() => setActiveTab("qr")}
@@ -397,6 +404,8 @@ export default function App() {
           void refreshWalletData();
         }}
       />
+
+      <OfflineIndicator />
     </div>
   );
 }

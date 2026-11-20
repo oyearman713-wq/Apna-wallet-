@@ -4,7 +4,6 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import http from "http";
 import path from "path";
-import { createServer as createViteServer } from "vite";
 import { WebSocketServer } from "ws";
 import { db, seedDefaultUserData, writeAuditLog } from "./server/db.ts";
 import { attachLiveStudioWebSocket, runNanoBananaEdit } from "./server/gemini.ts";
@@ -1493,6 +1492,7 @@ async function startServer() {
 
   // Vite dev middleware or static production files
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -1506,7 +1506,7 @@ async function startServer() {
     });
   }
 
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
   server.listen(PORT, "0.0.0.0", () => {
     console.log(`SmartPay Wallet server listening on http://0.0.0.0:${PORT}`);
   });

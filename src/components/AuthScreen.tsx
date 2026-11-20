@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ArrowRight, CheckCircle2, Lock, ShieldCheck, Smartphone } from "lucide-react";
 import type { BankAccount, ComplianceStatus, UserProfile } from "../types";
+import { PWAInstallButton } from "./PWAInstallButton";
 
 interface AuthScreenProps {
   compliance: ComplianceStatus | null;
@@ -304,9 +305,12 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({
             </form>
           )}
 
-          <div className="mt-8 pt-6 border-t border-slate-200 text-xs text-slate-500 leading-relaxed">
-            {compliance?.notice ||
-              "Sandbox mode active. Real-money UPI transfers require NPCI TPAP onboarding, KYC verification, and live PSP credentials."}
+          <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs text-slate-500 leading-relaxed">
+            <span>
+              {compliance?.notice ||
+                "Sandbox mode active. Real-money UPI transfers require NPCI TPAP onboarding, KYC verification, and live PSP credentials."}
+            </span>
+            <PWAInstallButton variant="card" />
           </div>
         </div>
       </div>

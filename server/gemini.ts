@@ -1,10 +1,5 @@
-import {
-  FunctionDeclaration,
-  GoogleGenAI,
-  LiveServerMessage,
-  Modality,
-  Type,
-} from "@google/genai";
+import { GoogleGenAI, Modality, Type } from "@google/genai";
+import type { FunctionDeclaration, LiveServerMessage } from "@google/genai";
 import type { WebSocket } from "ws";
 
 export function createGeminiClient(): GoogleGenAI {
